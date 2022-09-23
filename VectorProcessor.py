@@ -1,9 +1,12 @@
+import datetime
 import time
 from multiprocessing.connection import Client
 
 import numpy
 
-from Constants import GET_VECTORS_MESSAGE, SERVER_HOST, SERVER_PORT, SERVER_AUTH_KEY, INTERVAL_IN_SECONDS
+from Constants import GET_VECTORS_MESSAGE, SERVER_HOST, SERVER_PORT, SERVER_AUTH_KEY, INTERVAL_IN_SECONDS, \
+    VECTORS_IN_MATRIX, LOG_FILE_PATH
+from StatisticsLogger import ResultsLogger
 
 
 def get_client():
@@ -12,39 +15,41 @@ def get_client():
 
 
 if __name__ == '__main__':
+    resultsLogger = ResultsLogger(LOG_FILE_PATH)
+
     connection = get_client()
     vector_acquisition_rates = []
     start_time = time.time()
     try:
-        requests_counter = 0
         while True:
             iteration_start = time.time()
             now = time.time()
-            requests_counter += 1
-            print(f'requests_counter: {requests_counter}')
             connection.send(GET_VECTORS_MESSAGE)
             vectors = connection.recv()
             time_passed = time.time() - now
+            if time_passed > 1:
+                current_date_and_time = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                print(f'[{current_date_and_time}] Warning: Seems like a packet was lost in transit')
             vector_acquisition_rate = len(vectors) / time_passed
             vector_acquisition_rates.append(vector_acquisition_rate)
 
-            print(f'Got {len(vectors)} vectors in {time_passed:.5f} seconds, '
-                  f'which is a rate of {vector_acquisition_rate:.2f} vectors per second.')
-
             while len(vectors) > 0:
-                vectors_chunk = vectors[:100]
-                del vectors[-100:]
-                median = numpy.median(vectors_chunk)
+                vectors_chunk = vectors[:VECTORS_IN_MATRIX]
+                del vectors[:VECTORS_IN_MATRIX]
+                mean = numpy.mean(vectors_chunk)
                 std_deviation = numpy.std(vectors_chunk)
+                resultsLogger.log_matrix_statistics(mean, std_deviation)
 
             if start_time + INTERVAL_IN_SECONDS <= time.time():
                 break
 
     finally:
+        acquisition_rate_mean = numpy.mean(vector_acquisition_rates)
+        acquisition_rate_std = numpy.std(vector_acquisition_rates)
+
+        resultsLogger.log_acquisition_rate_statistics(
+            vector_acquisition_rates, acquisition_rate_mean, acquisition_rate_std
+        )
+
         connection.close()
 
-        print('******************')
-        print(f'acquisition rates: {vector_acquisition_rates}')
-        print(f'median: {numpy.median(vector_acquisition_rates)}')
-        print(f'std deviation: {numpy.std(vector_acquisition_rates)}')
-        print('******************')
