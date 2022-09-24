@@ -4,7 +4,7 @@ from multiprocessing.connection import Listener
 
 import numpy as numpy
 
-from Constants import SERVER_HOST, SERVER_PORT, SERVER_AUTH_KEY, VECTORS_PER_SECOND
+from Constants import SERVER_HOST, SERVER_PORT, SERVER_AUTH_KEY, VECTORS_PER_SECOND, VECTOR_LENGTH, GET_VECTORS_MESSAGE
 
 
 class VectorGenerator:
@@ -29,16 +29,12 @@ class VectorGenerator:
         return arg_parser
 
     @staticmethod
-    def generate_vectors(vectors_count):
-        # TODO: convert this into a single list object
-        vectors = []
-        for j in range(vectors_count):
-            vector = []
-            for i in range(50):
-                vector.append(numpy.random.normal())
+    def generate_vector():
+        vector = []
+        for i in range(VECTOR_LENGTH):
+            vector.append(numpy.random.normal())
 
-            vectors.append(vector)
-        return vectors
+        return vector
 
     @staticmethod
     def setup_communication():
@@ -48,13 +44,10 @@ class VectorGenerator:
     def is_noise(self):
         return self.is_noisy_mode and time.time() >= self.next_drop_timestamp
 
-    def send_vectors(self, vectors_count):
-        if vectors_count == 0:
-            return
-
-        vectors = VectorGenerator.generate_vectors(vectors_count)
-        self.connection.send(vectors)
-        self.sent_vectors_count += vectors_count
+    def send_vector(self):
+        generated_vector = VectorGenerator.generate_vector()
+        self.connection.send(generated_vector)
+        self.sent_vectors_count += 1
 
     def set_next_drop_timestamp(self, now):
         self.next_drop_timestamp = now + numpy.random.uniform(low=2, high=3)
@@ -77,7 +70,6 @@ class VectorGenerator:
         now = time.time()
         duration = now - self.start_time
         rate = self.sent_vectors_count / duration
-        print(f'current rate (from server): {rate}')
         return rate, duration
 
 
@@ -94,17 +86,19 @@ if __name__ == '__main__':
 
     start()
 
-    if msg != 'start':
-        # todo gracefully handle other msgs as error
-        raise RuntimeError()
+    if msg != GET_VECTORS_MESSAGE:
+        raise RuntimeError(f"VectorGenerator only supports the 'start' message. Got unrecognized keyword '{msg}'")
 
-    while True:
-        if vector_generator.is_noise():
-            vector_generator.sent_vectors_count += 1
-            vector_generator.set_next_drop_timestamp(time.time())
-            continue
+    try:
+        while True:
+            if vector_generator.is_noise():
+                vector_generator.sent_vectors_count += 1
+                vector_generator.set_next_drop_timestamp(time.time())
+                continue
 
-        vector_generator.send_vectors(1)
+            vector_generator.send_vector()
 
-        if vector_generator.sent_vectors_count % 10 == 0:
-            vector_generator.rate_check()
+            if vector_generator.sent_vectors_count % 10 == 0:
+                vector_generator.rate_check()
+    finally:
+        vector_generator.connection.close()
