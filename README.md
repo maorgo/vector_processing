@@ -17,4 +17,4 @@ In order to run the program itself, please run the `main.py` file.
 
 ### Examples ###
 In order to run the application from the root directory `multiprocessing`: `python3 main.py`
-In order to run this application in noisy mode: `python3 main.py -n`
+<br>In order to run this application in noisy mode: `python3 main.py -n`
