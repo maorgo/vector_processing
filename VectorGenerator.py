@@ -4,7 +4,8 @@ from multiprocessing.connection import Listener, Client
 
 import numpy as numpy
 
-from Constants import SERVER_HOST, SERVER_PORT, SERVER_AUTH_KEY, VECTORS_PER_SECOND, VECTOR_LENGTH, GET_VECTORS_MESSAGE
+from Constants import SERVER_HOST, SERVER_PORT, SERVER_AUTH_KEY, EXPECTED_VECTORS_PER_SECOND, VECTOR_LENGTH, \
+    GET_VECTORS_MESSAGE
 
 
 class VectorGenerator:
@@ -54,7 +55,7 @@ class VectorGenerator:
 
     def rate_check(self):
         rate, duration = self.calculate_send_rate()
-        while rate > VECTORS_PER_SECOND:
+        while rate > EXPECTED_VECTORS_PER_SECOND:
             rate, duration = self.calculate_send_rate()
 
         # if rate < VECTORS_PER_SECOND:

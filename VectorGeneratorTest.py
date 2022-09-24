@@ -3,8 +3,8 @@ import sys
 import time
 import unittest
 
-from src.Constants import GET_VECTORS_MESSAGE, VECTORS_PER_SECOND, VECTOR_LENGTH
-from src.VectorGenerator import VectorGenerator
+from Constants import VECTOR_LENGTH, EXPECTED_VECTORS_PER_SECOND, GET_VECTORS_MESSAGE
+from VectorGenerator import VectorGenerator
 
 
 class VectorGeneratorTest(unittest.TestCase):
@@ -27,9 +27,9 @@ class VectorGeneratorTest(unittest.TestCase):
     @staticmethod
     def start_vector_generator(noisy_mode: bool):
         if noisy_mode:
-            subprocess.Popen(['python3', '../src/VectorGenerator.py', '-n'])
+            subprocess.Popen(['python3', 'VectorGenerator.py', '-n'])
         else:
-            subprocess.Popen(['python3', '../src/VectorGenerator.py'])
+            subprocess.Popen(['python3', 'VectorGenerator.py'])
         time.sleep(3)
 
     def start_sanity_test(self, client):
@@ -66,8 +66,8 @@ class VectorGeneratorTest(unittest.TestCase):
     def validate_rate(self, duration, expected_rate_lower_limit_factor, expected_rate_upper_limit_factor,
                       requests_counter):
         recv_rate = requests_counter / duration
-        self.assertLessEqual(recv_rate, VECTORS_PER_SECOND * expected_rate_upper_limit_factor)
-        self.assertGreaterEqual(recv_rate, VECTORS_PER_SECOND * expected_rate_lower_limit_factor)
+        self.assertLessEqual(recv_rate, EXPECTED_VECTORS_PER_SECOND * expected_rate_upper_limit_factor)
+        self.assertGreaterEqual(recv_rate, EXPECTED_VECTORS_PER_SECOND * expected_rate_lower_limit_factor)
 
     def validate_msg(self, msg):
         self.assertIsInstance(msg, list)

@@ -2,7 +2,7 @@ import time
 
 import numpy
 
-from Constants import GET_VECTORS_MESSAGE, LOG_FILE_PATH, VECTORS_PER_SECOND
+from Constants import GET_VECTORS_MESSAGE, LOG_FILE_PATH, EXPECTED_VECTORS_PER_SECOND
 from StatisticsLogger import ResultsLogger
 from VectorGenerator import VectorGenerator
 
@@ -60,7 +60,7 @@ class VectorProcessor:
         if packet_loss_interval_duration >= 1:
             print(f'total counter: {self.received_vectors_count}')
             print(f'Inside the condition. packet loss counter: {packet_loss_vectors_counter}')
-            packet_loss_vectors_counter -= VECTORS_PER_SECOND
+            packet_loss_vectors_counter -= EXPECTED_VECTORS_PER_SECOND
             packet_loss_start_time = time.time()
 
             if packet_loss_vectors_counter < 0:
