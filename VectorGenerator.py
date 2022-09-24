@@ -4,8 +4,7 @@ from multiprocessing.connection import Listener, Client
 
 import numpy as numpy
 
-from Constants import SERVER_HOST, SERVER_PORT, SERVER_AUTH_KEY, EXPECTED_VECTORS_PER_SECOND, VECTOR_LENGTH, \
-    GET_VECTORS_MESSAGE
+from Constants import SERVER_HOST, SERVER_PORT, SERVER_AUTH_KEY, VECTOR_LENGTH, GET_VECTORS_MESSAGE
 
 
 class VectorGenerator:
@@ -53,26 +52,6 @@ class VectorGenerator:
     def set_next_drop_timestamp(self, now):
         self.next_drop_timestamp = now + numpy.random.uniform(low=2, high=3)
 
-    def rate_check(self):
-        rate, duration = self.calculate_send_rate()
-        while rate > EXPECTED_VECTORS_PER_SECOND:
-            rate, duration = self.calculate_send_rate()
-
-        # if rate < VECTORS_PER_SECOND:
-        #     missing_rate = (VECTORS_PER_SECOND - rate) / VECTORS_PER_SECOND
-        #     missing_vectors_count = int(missing_rate * duration)
-        #     if missing_vectors_count > 0:
-        #         print(f'count: {missing_vectors_count}')
-        #         exit()
-
-            # self.send_vectors(missing_vectors_count)
-
-    def calculate_send_rate(self):
-        now = time.time()
-        duration = now - self.start_time
-        rate = self.sent_vectors_count / duration
-        return rate, duration
-
     @staticmethod
     def get_client():
         address = (SERVER_HOST, SERVER_PORT)
@@ -83,6 +62,10 @@ def start():
     vector_generator.start_time = time.time()
     if vector_generator.is_noisy_mode:
         vector_generator.set_next_drop_timestamp(vector_generator.start_time)
+
+
+def get_time_as_ms():
+    return int(time.time() * 1000)
 
 
 if __name__ == '__main__':
@@ -96,16 +79,20 @@ if __name__ == '__main__':
         raise RuntimeError(f"VectorGenerator only supports the 'start' message. Got unrecognized keyword '{msg}'")
 
     try:
+        prev_interval = get_time_as_ms()
         while True:
+            interval_start = get_time_as_ms()
+            while interval_start == prev_interval:
+                interval_start = get_time_as_ms()
+
+            prev_interval = interval_start
+
             if vector_generator.is_noise():
                 vector_generator.sent_vectors_count += 1
                 vector_generator.set_next_drop_timestamp(time.time())
                 continue
 
             vector_generator.send_vector()
-
-            if vector_generator.sent_vectors_count % 10 == 0:
-                vector_generator.rate_check()
 
     finally:
         vector_generator.connection.close()
