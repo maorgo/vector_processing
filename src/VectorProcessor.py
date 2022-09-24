@@ -4,7 +4,7 @@ import numpy
 
 from Constants import GET_VECTORS_MESSAGE, LOG_FILE_PATH, VECTORS_PER_SECOND
 from StatisticsLogger import ResultsLogger
-from src.VectorGenerator import VectorGenerator
+from VectorGenerator import VectorGenerator
 
 packet_loss_start_time = 0
 

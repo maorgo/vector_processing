@@ -4,7 +4,7 @@ from multiprocessing.connection import Listener, Client
 
 import numpy as numpy
 
-from src.Constants import SERVER_HOST, SERVER_PORT, SERVER_AUTH_KEY, VECTORS_PER_SECOND, VECTOR_LENGTH, GET_VECTORS_MESSAGE
+from Constants import SERVER_HOST, SERVER_PORT, SERVER_AUTH_KEY, VECTORS_PER_SECOND, VECTOR_LENGTH, GET_VECTORS_MESSAGE
 
 
 class VectorGenerator:
