@@ -58,8 +58,9 @@ class VectorProcessor:
 
     @staticmethod
     def check_for_packet_loss(now):
-        after_send = int(time.time() * 1000)
-        if after_send > int(now * 1000) + 1:
+        ms_in_seconds = 1_000
+        after_send = int(time.time() * ms_in_seconds)
+        if after_send > int(now * ms_in_seconds) + 1:
             print('[WARNING] Seems like a packet was lost in transit')
 
     def log_acquisition_rate_statistics(self):
@@ -79,7 +80,7 @@ class VectorProcessor:
 
         rate = self.received_vectors_count / total_run_duration
         print(f'[{now}] Received {self.received_vectors_count} vectors in {total_run_duration:.3f} '
-              f'seconds, which is a rate of {rate}')
+              f'seconds, which is a rate of {rate} vectors/second')
 
 
 if __name__ == '__main__':
