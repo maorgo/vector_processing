@@ -12,9 +12,6 @@ class ResultsLogger:
             f.write(f'*** A New Processing Batch Has Started At: {now} ***\n')
 
     def log_acquisition_rate_statistics(self, acquisition_rates, acquisition_mean, acquisition_std_dev):
-        for index in range(len(acquisition_rates)):
-            acquisition_rates[index] = f'{acquisition_rates[index]:.2f}'
-
         with open(self.logfile_path, 'a') as f:
             f.write(f'\n*** Rate Acquisition Statistics ***\n')
             f.write(f'Acquisition rates: {acquisition_rates}\n')

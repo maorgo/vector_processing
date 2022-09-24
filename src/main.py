@@ -19,15 +19,15 @@ if __name__ == '__main__':
 
     print(f'Starting the generator (server) at {time.strftime("%H:%M:%S")}')
     if noisy_mode_enabled:
-        a = subprocess.Popen(['python3', 'VectorGenerator.py', '-n'])
+        a = subprocess.Popen(['python3', 'src/VectorGenerator.py', '-n'])
     else:
-        a = subprocess.Popen(['python3', 'VectorGenerator.py'])
+        a = subprocess.Popen(['python3', 'src/VectorGenerator.py'])
 
     # grace period to let the server start
     time.sleep(3)
 
     print('Starting the processor (client)')
-    b = subprocess.Popen(['python3', 'VectorProcessor.py'])
+    b = subprocess.Popen(['python3', 'src/VectorProcessor.py'])
 
     # This is the duration of the application life
     time.sleep(INTERVAL_IN_SECONDS)

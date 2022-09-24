@@ -1,16 +1,16 @@
 import subprocess
+import sys
 import time
 import unittest
-from multiprocessing.connection import Client
 
-from src.Constants import SERVER_HOST, SERVER_PORT, SERVER_AUTH_KEY, GET_VECTORS_MESSAGE, VECTORS_PER_SECOND, \
-    VECTOR_LENGTH
+from src.Constants import GET_VECTORS_MESSAGE, VECTORS_PER_SECOND, VECTOR_LENGTH
+from src.VectorGenerator import VectorGenerator
 
 
 class VectorGeneratorTest(unittest.TestCase):
     def testVectorGeneratorSanityWithNoise(self):
         VectorGeneratorTest.start_vector_generator(noisy_mode=True)
-        client = VectorGeneratorTest.get_VectorGenerator_client()
+        client = VectorGenerator.get_client()
         try:
             self.start_sanity_test(client)
         finally:
@@ -18,16 +18,11 @@ class VectorGeneratorTest(unittest.TestCase):
 
     def testVectorGeneratorSanity(self):
         VectorGeneratorTest.start_vector_generator(noisy_mode=False)
-        client = VectorGeneratorTest.get_VectorGenerator_client()
+        client = VectorGenerator.get_client()
         try:
             self.start_sanity_test(client)
         finally:
             client.close()
-
-    @staticmethod
-    def get_VectorGenerator_client():
-        address = (SERVER_HOST, SERVER_PORT)
-        return Client(address, authkey=SERVER_AUTH_KEY)
 
     @staticmethod
     def start_vector_generator(noisy_mode: bool):
@@ -76,8 +71,13 @@ class VectorGeneratorTest(unittest.TestCase):
 
     def validate_msg(self, msg):
         self.assertIsInstance(msg, list)
-        self.assertIsInstance(msg[0], int)
+        self.assertIsInstance(msg[0], float)
         self.assertEquals(len(msg), VECTOR_LENGTH)
+
+    def setUp(self):
+        if not sys.warnoptions:
+            import warnings
+            warnings.simplefilter("ignore")
 
 
 if __name__ == '__main__':

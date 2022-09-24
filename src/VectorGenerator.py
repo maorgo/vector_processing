@@ -1,10 +1,10 @@
 import time
 from argparse import ArgumentParser
-from multiprocessing.connection import Listener
+from multiprocessing.connection import Listener, Client
 
 import numpy as numpy
 
-from Constants import SERVER_HOST, SERVER_PORT, SERVER_AUTH_KEY, VECTORS_PER_SECOND, VECTOR_LENGTH, GET_VECTORS_MESSAGE
+from src.Constants import SERVER_HOST, SERVER_PORT, SERVER_AUTH_KEY, VECTORS_PER_SECOND, VECTOR_LENGTH, GET_VECTORS_MESSAGE
 
 
 class VectorGenerator:
@@ -72,6 +72,11 @@ class VectorGenerator:
         rate = self.sent_vectors_count / duration
         return rate, duration
 
+    @staticmethod
+    def get_client():
+        address = (SERVER_HOST, SERVER_PORT)
+        return Client(address, authkey=SERVER_AUTH_KEY)
+
 
 def start():
     vector_generator.start_time = time.time()
@@ -80,11 +85,13 @@ def start():
 
 
 if __name__ == '__main__':
+    print('Starting VectorGenerator')
     vector_generator = VectorGenerator()
     vector_generator.ready_for_connections()
     msg = vector_generator.connection.recv()
 
     start()
+    print('VectorGenerator was started successfully')
 
     if msg != GET_VECTORS_MESSAGE:
         raise RuntimeError(f"VectorGenerator only supports the 'start' message. Got unrecognized keyword '{msg}'")
@@ -100,5 +107,6 @@ if __name__ == '__main__':
 
             if vector_generator.sent_vectors_count % 10 == 0:
                 vector_generator.rate_check()
+
     finally:
         vector_generator.connection.close()
