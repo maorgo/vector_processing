@@ -21,5 +21,5 @@ class ResultsLogger:
     def log_matrix_statistics(self, mean, std_dev):
         with open(self.logfile_path, 'a') as f:
             f.write(f'\n*** Matrix Statistics ***\n')
-            f.write(f'Matrix mean: {mean:.2f}\n')
-            f.write(f'Standard deviation is: {std_dev:.2f}\n')
+            f.write(f'Matrix mean: {mean}\n')
+            f.write(f'Standard deviation is: {std_dev}\n')

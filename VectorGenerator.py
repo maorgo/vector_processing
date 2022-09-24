@@ -86,13 +86,11 @@ def start():
 
 
 if __name__ == '__main__':
-    print('Starting VectorGenerator')
     vector_generator = VectorGenerator()
     vector_generator.ready_for_connections()
     msg = vector_generator.connection.recv()
 
     start()
-    print('VectorGenerator was started successfully')
 
     if msg != GET_VECTORS_MESSAGE:
         raise RuntimeError(f"VectorGenerator only supports the 'start' message. Got unrecognized keyword '{msg}'")

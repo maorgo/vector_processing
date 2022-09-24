@@ -2,7 +2,7 @@ import time
 
 import numpy
 
-from Constants import GET_VECTORS_MESSAGE, LOG_FILE_PATH, EXPECTED_VECTORS_PER_SECOND
+from Constants import GET_VECTORS_MESSAGE, LOG_FILE_PATH, EXPECTED_VECTORS_PER_SECOND, VECTORS_IN_MATRIX
 from StatisticsLogger import ResultsLogger
 from VectorGenerator import VectorGenerator
 
@@ -12,7 +12,7 @@ packet_loss_start_time = 0
 class VectorProcessor:
     def __init__(self):
         self.client = VectorGenerator.get_client()
-        self.results_logger = ResultsLogger(LOG_FILE_PATH)
+        self.stats_logger = ResultsLogger(LOG_FILE_PATH)
         self.start_time = None
         self.received_vectors_count = 0
 
@@ -29,9 +29,11 @@ class VectorProcessor:
 
             interval_vectors_count = 0
             packet_loss_vectors_counter = 0
+            matrix = []
 
             while True:
-                vector = self.client.recv()
+                now = time.time()
+                matrix.append(self.client.recv())
                 self.received_vectors_count += 1
                 interval_vectors_count += 1
                 packet_loss_vectors_counter += 1
@@ -47,19 +49,27 @@ class VectorProcessor:
 
                     packet_loss_vectors_counter = self.check_for_packet_loss(packet_loss_vectors_counter)
 
-                # self.print_current_rate(now)
+                # For each matrix, calculate and write to the fs the mean and std
+                if len(matrix) == VECTORS_IN_MATRIX:
+                    mean_vector = numpy.mean(matrix, axis=0).tolist()
+                    std = numpy.std(matrix, axis=0).tolist()
+                    self.stats_logger.log_matrix_statistics(mean_vector, std)
+                    matrix = []
+
+                self.print_current_rate(now)
 
         finally:
             self.client.close()
 
-    def check_for_packet_loss(self, packet_loss_vectors_counter):
+    @staticmethod
+    def check_for_packet_loss(packet_loss_vectors_counter):
         global packet_loss_start_time
         packet_loss_interval_duration = time.time() - packet_loss_start_time
 
         # Check if a second has passed
         if packet_loss_interval_duration >= 1:
-            print(f'total counter: {self.received_vectors_count}')
-            print(f'Inside the condition. packet loss counter: {packet_loss_vectors_counter}')
+            # print(f'total counter: {self.received_vectors_count}')
+            # print(f'Inside the condition. packet loss counter: {packet_loss_vectors_counter}')
             packet_loss_vectors_counter -= EXPECTED_VECTORS_PER_SECOND
             packet_loss_start_time = time.time()
 
@@ -71,13 +81,11 @@ class VectorProcessor:
 
     def log_acquisition_rate_statistics(self):
         if len(self.acquisition_rates) % 10 == 0:
-            # calculate mean and std for every 10
+            # calculate mean and std for every 10 vectors received
             acquisition_mean = numpy.mean(self.acquisition_rates)
             acquisition_std = numpy.std(self.acquisition_rates)
 
-            self.results_logger.log_acquisition_rate_statistics(
-                self.acquisition_rates, acquisition_mean, acquisition_std
-            )
+            self.stats_logger.log_acquisition_rate_statistics(self.acquisition_rates, acquisition_mean, acquisition_std)
 
     def print_current_rate(self, now):
         total_run_duration = now - self.start_time
