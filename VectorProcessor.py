@@ -32,7 +32,8 @@ class VectorProcessor:
             while True:
                 now = time.time()
                 matrix.append(self.client.recv())
-                self.check_for_packet_loss(now)
+                if self.check_for_packet_loss(now):
+                    self.received_vectors_count += 1
                 self.received_vectors_count += 1
                 interval_vectors_count += 1
 
@@ -62,6 +63,8 @@ class VectorProcessor:
         after_send = int(time.time() * ms_in_seconds)
         if after_send > int(now * ms_in_seconds) + 1:
             print('[WARNING] Seems like a packet was lost in transit')
+            return True
+        return False
 
     def log_acquisition_rate_statistics(self):
         # calculate mean and std for every 10 vectors received
