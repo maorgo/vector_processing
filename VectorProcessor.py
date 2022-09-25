@@ -34,6 +34,8 @@ class VectorProcessor:
                 matrix.append(self.client.recv())
                 if self.check_for_packet_loss(now):
                     self.received_vectors_count += 1
+                    interval_vectors_count += 1
+
                 self.received_vectors_count += 1
                 interval_vectors_count += 1
 
