@@ -34,13 +34,11 @@ class VectorProcessor:
             while True:
                 now = time.time()
                 matrix.append(self.client.recv())
-                # Check if noise was introduced. If so, adjust the rate and wait for the new message
+                # Check if noise was introduced.
                 if self.check_for_packet_loss(now):
                     self.received_vectors_count += 1
                     interval_vectors_count += 1
-                    continue
 
-                # self.check_for_packet_loss(now)
                 self.received_vectors_count += 1
                 interval_vectors_count += 1
 
@@ -72,7 +70,7 @@ class VectorProcessor:
     def check_for_packet_loss(now):
         ms_in_seconds = 1_000
         time_after_vector_transfer = int(time.time() * ms_in_seconds)
-        # More than 1 ms has passed, thus we should've received more than one message
+        # Check if a 1ms interval already has passed. If so, a vector was dropped.
         if time_after_vector_transfer > int(now * ms_in_seconds) + 1:
             print('[WARNING] Seems like a packet was lost in transit')
             return True
@@ -94,7 +92,7 @@ class VectorProcessor:
             return
 
         rate = self.received_vectors_count / total_run_duration
-        print(f'[{now}] Received {self.received_vectors_count} vectors in {total_run_duration:.3f} '
+        print(f'[{int(now * 1000)}] Received {self.received_vectors_count} vectors in {total_run_duration:.3f} '
               f'seconds, which is a rate of {rate} vectors/second')
 
 

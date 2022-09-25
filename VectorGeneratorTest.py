@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 import time
@@ -9,28 +10,31 @@ from VectorGenerator import VectorGenerator
 
 class VectorGeneratorTest(unittest.TestCase):
     def testVectorGeneratorSanityWithNoise(self):
-        VectorGeneratorTest.start_vector_generator(noisy_mode=True)
+        process_id = VectorGeneratorTest.start_vector_generator(noisy_mode=True)
         client = VectorGenerator.get_client()
         try:
             self.start_sanity_test(client)
         finally:
+            os.kill(process_id, 9)
             client.close()
 
     def testVectorGeneratorSanity(self):
-        VectorGeneratorTest.start_vector_generator(noisy_mode=False)
+        process_id = VectorGeneratorTest.start_vector_generator(noisy_mode=False)
         client = VectorGenerator.get_client()
         try:
             self.start_sanity_test(client)
         finally:
+            os.kill(process_id, 9)
             client.close()
 
     @staticmethod
     def start_vector_generator(noisy_mode: bool):
         if noisy_mode:
-            subprocess.Popen(['python3', 'VectorGenerator.py', '-n'])
+            process_id = subprocess.Popen(['python3', 'VectorGenerator.py', '-n']).pid
         else:
-            subprocess.Popen(['python3', 'VectorGenerator.py'])
+            process_id = subprocess.Popen(['python3', 'VectorGenerator.py']).pid
         time.sleep(3)
+        return process_id
 
     def start_sanity_test(self, client):
         expected_rate_upper_limit_factor = 1.01

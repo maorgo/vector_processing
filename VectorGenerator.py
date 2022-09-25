@@ -81,6 +81,8 @@ class VectorGenerator:
                     vector_generator.set_next_drop_timestamp(time.time())
                     continue
 
+                if self.connection.closed:
+                    raise RuntimeError('Connection was closed, stopping the generator')
                 vector_generator.send_vector()
 
         finally:
