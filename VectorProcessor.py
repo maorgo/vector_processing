@@ -21,9 +21,11 @@ class VectorProcessor:
     def start(self):
         global packet_loss_start_time
         try:
+            # Start the communication
             self.client.send(GET_VECTORS_MESSAGE)
 
             self.start_time = time.time()
+            # Used to calculate the acquisition rate, in intervals
             interval_start_time = self.start_time
 
             interval_vectors_count = 0
@@ -32,16 +34,20 @@ class VectorProcessor:
             while True:
                 now = time.time()
                 matrix.append(self.client.recv())
+                # Check if noise was introduced. If so, adjust the rate and wait for the new message
                 if self.check_for_packet_loss(now):
                     self.received_vectors_count += 1
                     interval_vectors_count += 1
+                    continue
 
+                # self.check_for_packet_loss(now)
                 self.received_vectors_count += 1
                 interval_vectors_count += 1
 
-                d = time.time() - interval_start_time
-                if d >= 0.1:
-                    rate = interval_vectors_count / d
+                interval_duration = time.time() - interval_start_time
+                # Calculate the rate every 100ms
+                if interval_duration >= 0.1:
+                    rate = interval_vectors_count / interval_duration
                     self.acquisition_rates.append(rate)
                     interval_start_time = time.time()
                     interval_vectors_count = 0
@@ -50,20 +56,24 @@ class VectorProcessor:
 
                 # For each matrix, calculate and write to the fs the mean and std
                 if len(matrix) == VECTORS_IN_MATRIX:
-                    mean_vector = numpy.mean(matrix, axis=0).tolist()
-                    std = numpy.std(matrix, axis=0).tolist()
-                    self.stats_logger.log_matrix_statistics(mean_vector, std)
+                    self.log_matrix_statistics(matrix)
                     matrix = []
 
                 self.print_current_rate(now)
         finally:
             self.client.close()
 
+    def log_matrix_statistics(self, matrix):
+        mean_vector = numpy.mean(matrix, axis=0).tolist()
+        std = numpy.std(matrix, axis=0).tolist()
+        self.stats_logger.log_matrix_statistics(mean_vector, std)
+
     @staticmethod
     def check_for_packet_loss(now):
         ms_in_seconds = 1_000
-        after_send = int(time.time() * ms_in_seconds)
-        if after_send > int(now * ms_in_seconds) + 1:
+        time_after_vector_transfer = int(time.time() * ms_in_seconds)
+        # More than 1 ms has passed, thus we should've received more than one message
+        if time_after_vector_transfer > int(now * ms_in_seconds) + 1:
             print('[WARNING] Seems like a packet was lost in transit')
             return True
         return False

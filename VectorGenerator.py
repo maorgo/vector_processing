@@ -41,7 +41,7 @@ class VectorGenerator:
         address = (SERVER_HOST, SERVER_PORT)
         return Listener(address, authkey=SERVER_AUTH_KEY)
 
-    def is_noise(self):
+    def should_introduce_noise(self):
         return self.is_noisy_mode and time.time() >= self.next_drop_timestamp
 
     def send_vector(self):
@@ -57,11 +57,34 @@ class VectorGenerator:
         address = (SERVER_HOST, SERVER_PORT)
         return Client(address, authkey=SERVER_AUTH_KEY)
 
+    def start(self):
+        self.start_time = time.time()
+        if self.is_noisy_mode:
+            self.set_next_drop_timestamp(vector_generator.start_time)
 
-def start():
-    vector_generator.start_time = time.time()
-    if vector_generator.is_noisy_mode:
-        vector_generator.set_next_drop_timestamp(vector_generator.start_time)
+        if msg != GET_VECTORS_MESSAGE:
+            raise RuntimeError(f"VectorGenerator only supports the 'start' message. Got unrecognized keyword '{msg}'")
+
+        try:
+            prev_interval = get_time_as_ms()
+            while True:
+                interval_start = get_time_as_ms()
+                # Only send on a new ms interval
+                while interval_start == prev_interval:
+                    interval_start = get_time_as_ms()
+
+                prev_interval = interval_start
+
+                # If noise should be introduced, skip the transport of 1 vector
+                if vector_generator.should_introduce_noise():
+                    vector_generator.sent_vectors_count += 1
+                    vector_generator.set_next_drop_timestamp(time.time())
+                    continue
+
+                vector_generator.send_vector()
+
+        finally:
+            vector_generator.connection.close()
 
 
 def get_time_as_ms():
@@ -73,26 +96,4 @@ if __name__ == '__main__':
     vector_generator.ready_for_connections()
     msg = vector_generator.connection.recv()
 
-    start()
-
-    if msg != GET_VECTORS_MESSAGE:
-        raise RuntimeError(f"VectorGenerator only supports the 'start' message. Got unrecognized keyword '{msg}'")
-
-    try:
-        prev_interval = get_time_as_ms()
-        while True:
-            interval_start = get_time_as_ms()
-            while interval_start == prev_interval:
-                interval_start = get_time_as_ms()
-
-            prev_interval = interval_start
-
-            if vector_generator.is_noise():
-                vector_generator.sent_vectors_count += 1
-                vector_generator.set_next_drop_timestamp(time.time())
-                continue
-
-            vector_generator.send_vector()
-
-    finally:
-        vector_generator.connection.close()
+    vector_generator.start()
